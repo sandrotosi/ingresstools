@@ -18,6 +18,8 @@ routesreq = urllib.request.urlopen('https://api.tfl.gov.uk/Line/Mode/bus?%s' % u
 
 routes = json.loads(routesreq.read().decode())
 
+# TODO: skip the outboundOnly: true lines
+# TODO: skip lines with now stops (77 outbound, 150 inbound f.e.)
 for route in routes:
     for direction in ['inbound', 'outbound']:
         print(route['id'])
