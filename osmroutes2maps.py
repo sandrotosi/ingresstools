@@ -29,6 +29,7 @@ features = osm['features']
 geod = pyproj.Geod(ellps='WGS84')
 
 
+print('Extacting routes information... ', end='', flush=True)
 # extracts all the 'way' features (representing the sections of the route)
 # and add them to their relative routes (a way can be part of multiple routes)
 for feature in features:
@@ -36,13 +37,15 @@ for feature in features:
         for relation in feature['properties']['@relations']:
             if relation['role'] != 'platform':
                 routes[relation['reltags']['name']].append(LineString(feature['geometry']['coordinates']))
+print('%d routes found' % len(routes), flush=True)
 
 # merge the segments composing the route
 for route in routes:
     routes[route] = linemerge(routes[route])
-    
+
+print('Generating maps', end='', flush=True)
 for route in sorted(routes):
-    print(route)
+    print('.', end='', flush=True)
 
     if type(routes[route]) == LineString:
         lines = [routes[route], ]
