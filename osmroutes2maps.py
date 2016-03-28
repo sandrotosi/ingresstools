@@ -10,6 +10,8 @@ import urllib
 import sys
 import codecs
 import pyproj
+import yattag
+import hashlib
 
 
 routes = defaultdict(list)
@@ -43,10 +45,10 @@ print('%d routes found' % len(routes), flush=True)
 for route in routes:
     routes[route] = linemerge(routes[route])
 
+results = []
+
 print('Generating maps', end='', flush=True)
 for route in sorted(routes):
-    print('.', end='', flush=True)
-
     if type(routes[route]) == LineString:
         lines = [routes[route], ]
     else:
@@ -76,5 +78,34 @@ for route in sorted(routes):
         for port in portals_set:
             gmap.marker(port[1], port[0])
 
-    gmap.draw('%s/%s.html' % (resultdir, urllib.parse.quote(route, safe='')))
+    mapfile = '%s.html' % hashlib.sha1(route.encode('utf-8')).hexdigest()
+    gmap.draw('%s/%s' % (resultdir, mapfile))
 
+    results.append([route, len(portals_set), mapfile])
+
+    print('.', end='', flush=True)
+
+
+# generate an html with the results
+doc, tag, text = yattag.Doc().tagtext()
+
+with tag('html'):
+    with tag('body'):
+        with tag('table', border = '1'):
+            with tag('tr'):
+                with tag('td'):
+                    with tag('b'): text('Route')
+                with tag('td'):
+                    with tag('b'): text('No. of Portals')
+                with tag('td'):
+                    with tag('b'): text('Link to GMap')
+            for route, portals, mapfile in results:
+                with tag('tr'):
+                    with tag('td'): text(route)
+                    with tag('td'): text(str(portals))
+                    with tag('td'):
+                        with tag('a', target='_blank', href=mapfile):
+                            text('Map')
+
+with open('%s/index.html' % resultdir, 'w') as f:
+    f.write(doc.getvalue())
