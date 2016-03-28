@@ -38,7 +38,10 @@ for feature in features:
     if feature['id'].startswith('way/'):
         for relation in feature['properties']['@relations']:
             if relation['role'] != 'platform':
-                routes[relation['reltags']['name']].append(LineString(feature['geometry']['coordinates']))
+                if 'name' in relation['reltags']:
+                    routes[relation['reltags']['name']].append(LineString(feature['geometry']['coordinates']))
+                else:
+                    routes[relation['reltags']['ref']].append(LineString(feature['geometry']['coordinates']))
 print('%d routes found' % len(routes), flush=True)
 
 # merge the segments composing the route
