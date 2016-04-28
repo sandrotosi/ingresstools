@@ -60,7 +60,9 @@ for busroute in busroutes:
 
     # center the map around the "centroid" of the bus route
     gmap = gmplot.GoogleMapPlotter(center_lng=line.centroid.x, center_lat=line.centroid.y, zoom=14)
-    # TODO: fitBounds()/getBounds() https://developers.google.com/maps/documentation/javascript/reference [to set the zoom more accurately]
+    # fit the map around the bounds of the bus route line
+    gmap.fitBounds(line.bounds[1], line.bounds[0], line.bounds[3], line.bounds[2])
+
     gmap.plot(lats, lngs)
     for port in portals_set:
         gmap.marker(port[1], port[0])
