@@ -5,10 +5,10 @@ import json
 import ast
 import pyproj
 from shapely.geometry import LineString, Point
-import time
 import yattag
 import glob
 import codecs
+from progressbar import ProgressBar, ETA, SimpleProgress, FormatLabel
 
 MAPOUTPUTDIR = 'tfl_bus_routes_maps'
 
@@ -18,21 +18,17 @@ portals = [Point(x['lngE6']/10.0**6, x['latE6']/10.0**6) for x in portaljson['po
 
 geod = pyproj.Geod(ellps='WGS84')
 
-start = end = 0
-
-#busroutes = ['tfl_bus_routes/309_outbound.json', 'tfl_bus_routes/309_inbound.json']
 busroutes = sorted(glob.glob('tfl_bus_routes/*.json'))
 
 results = []
 
-for busroute in busroutes:
+pbar = ProgressBar(widgets=[FormatLabel('Routes processed: %(value)d of %(max)d - '), ETA()],
+                   maxval=len(busroutes)).start()
 
-    start = time.time()
+for i, busroute in enumerate(busroutes):
 
     with open(busroute) as f:
         route = json.load(f)
-
-    print('Processing %s %s... ' % (route['lineId'], route['direction']), end="", flush=True)
 
     # lineString is a Unicode string containing a list of pairs, for the points
     # on the map drawing a line the bus takes on the streets, so need to convert
@@ -72,15 +68,13 @@ for busroute in busroutes:
     mapfile = "%s/%s_%s.html" % (MAPOUTPUTDIR, route['lineId'], route['direction'])
     gmap.draw(mapfile)
 
-    end = time.time()
-
-    print('done: portals found = %d, time = %fs' % (len(portals_set), end - start))
-
     results.append([route['lineId'], route['direction'] + ' (' +
                     route['stopPointSequences'][0]['stopPoint'][0]['name'] +
                     ' to ' +
                     route['stopPointSequences'][0]['stopPoint'][-1]['name'] +
                     ')', len(portals_set), mapfile])
+    pbar.update(i+1)
+pbar.finish()
 
 
 # generate an html with the results
