@@ -6,17 +6,15 @@ import ast
 import pyproj
 from shapely.geometry import LineString, Point
 import time
-# local copy from https://pypi.python.org/pypi/yattag
 import yattag
 import glob
+import codecs
 
 MAPOUTPUTDIR = 'tfl_bus_routes_maps'
 
-with open('portalData/49k_portalData.json') as f:
-    j = json.load(f)
-
+portaljson = json.load(codecs.open('data/london_m25_20160429041218_AllPortals.json', 'r', 'utf-8-sig'))
 # we create Point objects now, it saves ~20% of the time per iteration
-portals = [Point(x[1]['lngE6']/10.0**6, x[1]['latE6']/10.0**6) for x in j.items()]
+portals = [Point(x['lngE6']/10.0**6, x['latE6']/10.0**6) for x in portaljson['portals']]
 
 geod = pyproj.Geod(ellps='WGS84')
 
