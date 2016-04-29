@@ -62,6 +62,7 @@ for busroute in busroutes:
     gmap = gmplot.GoogleMapPlotter(center_lng=line.centroid.x, center_lat=line.centroid.y, zoom=14)
     # fit the map around the bounds of the bus route line
     gmap.fitBounds(line.bounds[1], line.bounds[0], line.bounds[3], line.bounds[2])
+    gmap.title = 'Tfl bus: ' + route['lineId'] + ' ' + route['direction']
 
     gmap.add_symbol('arrowSymbol', {'path': 'google.maps.SymbolPath.FORWARD_CLOSED_ARROW',
                                     'scale': 2})
