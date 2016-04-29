@@ -63,7 +63,11 @@ for busroute in busroutes:
     # fit the map around the bounds of the bus route line
     gmap.fitBounds(line.bounds[1], line.bounds[0], line.bounds[3], line.bounds[2])
 
-    gmap.plot(lats, lngs)
+    gmap.add_symbol('arrowSymbol', {'path': 'google.maps.SymbolPath.FORWARD_CLOSED_ARROW',
+                                    'scale': 2})
+
+    gmap.plot(lats, lngs, icons={'icon': 'arrowSymbol', 'offset': '7%', 'repeat': '7%'})
+
     for port in portals_set:
         gmap.marker(port[1], port[0])
     mapfile = "%s/%s_%s.html" % (MAPOUTPUTDIR, route['lineId'], route['direction'])
