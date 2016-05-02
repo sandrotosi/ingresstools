@@ -59,6 +59,8 @@ for route in sorted(routes):
         lines = routes[route]
 
     gmap = gmplot.GoogleMapPlotter(center_lng=lines[0].centroid.x, center_lat=lines[0].centroid.y, zoom=14)
+    gmap.fitBounds(routes[route].bounds[1], routes[route].bounds[0],
+                   routes[route].bounds[3], routes[route].bounds[2])
 
     portals_set = set()
 
