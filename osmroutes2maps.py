@@ -12,6 +12,7 @@ import codecs
 import pyproj
 import yattag
 import hashlib
+from progressbar import ProgressBar, ETA, SimpleProgress, FormatLabel
 
 
 routes = defaultdict(list)
@@ -51,8 +52,10 @@ print('%d routes found' % len(routes), flush=True)
 
 results = []
 
-print('Generating maps', end='', flush=True)
-for route in sorted(routes):
+pbar = ProgressBar(widgets=[FormatLabel('Routes processed: %(value)d of %(max)d - '), ETA()],
+                    maxval=len(routes)).start()
+
+for i, route in enumerate(sorted(routes)):
     if type(routes[route]) == LineString:
         lines = [routes[route], ]
     else:
@@ -93,7 +96,8 @@ for route in sorted(routes):
 
     results.append([route, len(portals_set), mapfile])
 
-    print('.', end='', flush=True)
+    pbar.update(i+1)
+pbar.finish()
 
 
 # generate an html with the results
