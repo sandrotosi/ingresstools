@@ -37,12 +37,15 @@ print('Extacting routes information... ', end='', flush=True)
 # and add them to their relative routes (a way can be part of multiple routes)
 for feature in features:
     if feature['id'].startswith('way/'):
-        for relation in feature['properties']['@relations']:
-            if relation['role'] != 'platform':
-                if 'name' in relation['reltags']:
-                    routes[relation['reltags']['name']].append(LineString(feature['geometry']['coordinates']))
-                else:
-                    routes[relation['reltags']['ref']].append(LineString(feature['geometry']['coordinates']))
+        if '@relations' in feature['properties']:
+            for relation in feature['properties']['@relations']:
+                if relation['role'] != 'platform':
+                    if 'name' in relation['reltags']:
+                        routes[relation['reltags']['name']].append(LineString(feature['geometry']['coordinates']))
+                    else:
+                        routes[relation['reltags']['ref']].append(LineString(feature['geometry']['coordinates']))
+        else:
+            print("skipping", feature['id'])
 
 # merge the segments composing the route
 for route in routes:
@@ -86,7 +89,7 @@ for i, route in enumerate(sorted(routes)):
         gmap.add_symbol('arrowSymbol', {'path': 'google.maps.SymbolPath.FORWARD_CLOSED_ARROW',
                                         'scale': 2})
 
-        gmap.plot(lats, lngs, icons={'icon': 'arrowSymbol', 'offset': '7%', 'repeat': '7%'})
+        gmap.plot(lats, lngs)#, icons={'icon': 'arrowSymbol', 'offset': '7%', 'repeat': '7%'})
         
         for port in portals_set:
             gmap.marker(port[1], port[0])
