@@ -118,7 +118,10 @@ for i, route in enumerate(sorted(routes)):
         gmap.add_symbol('arrowSymbol', {'path': 'google.maps.SymbolPath.FORWARD_CLOSED_ARROW',
                                         'scale': 2})
 
-        gmap.plot(lats, lngs)#, icons={'icon': 'arrowSymbol', 'offset': '7%', 'repeat': '7%'})
+        if len(line.coords) > 3:
+            gmap.plot(lats, lngs , icons={'icon': 'arrowSymbol', 'offset': '7%', 'repeat': '7%'})
+        else:
+            gmap.plot(lats, lngs)#, icons={'icon': 'arrowSymbol', 'offset': '7%', 'repeat': '7%'})
         
         for port in portals_set:
             gmap.marker(port[1], port[0])
