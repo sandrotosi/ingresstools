@@ -13,42 +13,69 @@ import pyproj
 import yattag
 import hashlib
 from progressbar import ProgressBar, ETA, SimpleProgress, FormatLabel
+import overpy
+
+
+# this query retrieves all the routes information in te given area of teh city,
+# and recursively expand the route (if it starts/ends outside of the area).
+# that includes nodes (stops), ways (the streets segments), and relations (the routes)
+QUERY = """
+[out:json];
+area[name = "%(city)s"]->.a;
+(
+  node["route"="%(type)s"](area.a);
+  way["route"="%(type)s"](area.a);
+  relation["route"="%(type)s"](area.a);
+);
+out body;
+>;
+out skel;
+"""
 
 
 routes = defaultdict(list)
 
 
-osmfile = sys.argv[1]
-portalfile = sys.argv[2]
-resultdir = sys.argv[3]
+city = sys.argv[1]
+routetype = sys.argv[2]
+portalfile = sys.argv[3]
+resultdir = sys.argv[4]
 
 portaljson = json.load(codecs.open(portalfile, 'r', 'utf-8-sig'))
 # we create Point objects now, it saves ~20% of the time per iteration
 portals = [Point(x['lngE6']/10.0**6, x['latE6']/10.0**6) for x in portaljson['portals']]
 
-osm = json.load(open(osmfile))
-features = osm['features']
 
 geod = pyproj.Geod(ellps='WGS84')
 
 
-print('Extacting routes information... ', end='', flush=True)
-# extracts all the 'way' features (representing the sections of the route)
-# and add them to their relative routes (a way can be part of multiple routes)
-for feature in features:
-    if feature['id'].startswith('way/'):
-        if '@relations' in feature['properties']:
-            for relation in feature['properties']['@relations']:
-                if relation['role'] != 'platform':
-                    if 'name' in relation['reltags']:
-                        routes[relation['reltags']['name']].append(LineString(feature['geometry']['coordinates']))
-                    else:
-                        routes[relation['reltags']['ref']].append(LineString(feature['geometry']['coordinates']))
-        else:
-            print("skipping", feature['id'])
+print('Downloading and parsing routes information... ', end='', flush=True)
 
-# merge the segments composing the route
+api = overpy.Overpass()
+osmresult = api.query(QUERY % {'city': city, 'type': routetype})
+
+for relation in osmresult.relations:
+    # skip the relation if it has no name associated to it (so no route name)
+    if 'name' not in relation.tags:
+        continue
+    routename = relation.tags['name']
+    if 'ref' in relation.tags and not routename.startswith(relation.tags['ref']):
+        routename = relation.tags['ref'] + ' ' + routename
+    for member in relation.members:
+        if member.role == '':
+            nodes = member.resolve()
+            # just parse the Way objects, which are sections of the route
+            if type(nodes) == overpy.Way:
+                way = list()
+                # The route is composed by several segments, each represented by a Way object
+                # we create a LineString for each Way, and we append it to the route ... (1)
+                for node in nodes.nodes:
+                    way.append((node.lon, node.lat))
+                routes[routename].append(LineString(way))
+
 for route in routes:
+    # (1) ... and then we merge it in a single line here; it's important to note that
+    # linemerge() returns a LineString or MultiLineString when lines are not contiguous
     routes[route] = linemerge(routes[route])
 
 print('%d routes found' % len(routes), flush=True)
@@ -59,6 +86,8 @@ pbar = ProgressBar(widgets=[FormatLabel('Routes processed: %(value)d of %(max)d 
                     maxval=len(routes)).start()
 
 for i, route in enumerate(sorted(routes)):
+    # see above node on linemerge(), we handle the case of MultiLineString by forcing
+    # lines to be always a list, eventually made by a single item
     if type(routes[route]) == LineString:
         lines = [routes[route], ]
     else:
