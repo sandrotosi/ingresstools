@@ -71,7 +71,8 @@ for relation in osmresult.relations:
                 # we create a LineString for each Way, and we append it to the route ... (1)
                 for node in nodes.nodes:
                     way.append((node.lon, node.lat))
-                routes[routename].append(LineString(way))
+                if len(way) > 1:
+                    routes[routename].append(LineString(way))
 
 for route in routes:
     # (1) ... and then we merge it in a single line here; it's important to note that
